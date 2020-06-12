@@ -57,7 +57,7 @@ func watch(cmd *cobra.Command, args []string) error {
 
 	c := make(chan notify.EventInfo, 1)
 
-	if err := notify.Watch(filepath.Join(wd, "main.py"), c, notify.InCloseWrite); err != nil {
+	if err := notify.Watch(filepath.Join(wd, "main.py"), c, notify.Write); err != nil {
 		return err
 	}
 
