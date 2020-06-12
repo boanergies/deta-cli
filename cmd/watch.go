@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/deta/deta-cli/api"
 	"github.com/deta/deta-cli/runtime"
@@ -67,14 +66,58 @@ func watch(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		start := time.Now()
 		err = lc.DeployLambda(progInfo.ID, archive)
 		if err != nil {
 			return err
 		}
-		end := time.Now()
-		fmt.Println("Deploy lambda took", end.Sub(start))
 		fmt.Println("Deployed changes")
+
+		dc, err := runtimeManager.GetDepChanges()
+		if err != nil {
+			return err
+		}
 		runtimeManager.StoreState()
+
+		if dc != nil {
+			fmt.Println("Updating dependencies...")
+			command := runtime.DepCommands[progInfo.Runtime]
+			if len(dc.Added) > 0 {
+				installCmd := fmt.Sprintf("%s install", command)
+				for _, a := range dc.Added {
+					installCmd = fmt.Sprintf("%s %s", installCmd, a)
+				}
+				o, err := client.UpdateProgDeps(&api.UpdateProgDepsRequest{
+					ProgramID: progInfo.ID,
+					Command:   installCmd,
+				})
+				if err != nil {
+					return fmt.Errorf("failed to add dependencies: %v", err)
+				}
+				fmt.Println(o.Output)
+
+				for _, a := range dc.Added {
+					progInfo.Deps = append(progInfo.Deps, a)
+				}
+				runtimeManager.StoreProgInfo(progInfo)
+			}
+			if len(dc.Removed) > 0 {
+				uninstallCmd := fmt.Sprintf("%s uninstall", command)
+				for _, d := range dc.Removed {
+					uninstallCmd = fmt.Sprintf("%s %s", uninstallCmd, d)
+				}
+				o, err := client.UpdateProgDeps(&api.UpdateProgDepsRequest{
+					ProgramID: progInfo.ID,
+					Command:   uninstallCmd,
+				})
+				if err != nil {
+					return fmt.Errorf("failed to remove dependencies: %v", err)
+				}
+				fmt.Println(o.Output)
+				for _, d := range dc.Removed {
+					progInfo.Deps = removeFromSlice(progInfo.Deps, d)
+				}
+				runtimeManager.StoreProgInfo(progInfo)
+			}
+		}
 	}
 }
