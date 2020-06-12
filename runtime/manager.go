@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"io"
 	"io/ioutil"
@@ -63,6 +64,7 @@ type Manager struct {
 
 // NewManager returns a new runtime manager for the root dir of the program
 func NewManager(root *string) (*Manager, error) {
+	defer timetrack(time.Now(), "runtime.NewManager")
 	var rootDir string
 	if root != nil {
 		rootDir = *root
@@ -103,6 +105,7 @@ func NewManager(root *string) (*Manager, error) {
 
 // Zipp xx
 func (m *Manager) Zipp() ([]byte, error) {
+	defer timetrack(time.Now(), "runtime.Zipp")
 	archive, err := m.z.zipp()
 	if err != nil {
 		return nil, err
@@ -112,6 +115,7 @@ func (m *Manager) Zipp() ([]byte, error) {
 
 // StoreProgInfo stores program info to disk
 func (m *Manager) StoreProgInfo(p *ProgInfo) error {
+	defer timetrack(time.Now(), "runtime.StoreProgInfo")
 	marshalled, err := json.Marshal(p)
 	if err != nil {
 		return err
@@ -121,6 +125,7 @@ func (m *Manager) StoreProgInfo(p *ProgInfo) error {
 
 // GetProgInfo gets the program info stored
 func (m *Manager) GetProgInfo() (*ProgInfo, error) {
+	defer timetrack(time.Now(), "runtime.GetProgInfo")
 	contents, err := m.readFile(m.progInfoPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -154,6 +159,7 @@ func (m *Manager) GetUserInfo() (*UserInfo, error) {
 
 // IsInitialized checks if the root directory is initialized as a deta program
 func (m *Manager) IsInitialized() (bool, error) {
+	defer timetrack(time.Now(), "runtime.IsInitialized")
 	_, err := os.Stat(m.progInfoPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -191,6 +197,7 @@ func (m *Manager) IsProgDirEmpty() (bool, error) {
 
 // GetRuntime figures out the runtime of the program from entrypoint file if present in the root dir
 func (m *Manager) GetRuntime() (string, error) {
+	defer timetrack(time.Now(), "runtime.GetRuntime")
 	var runtime string
 	var found bool
 	err := filepath.Walk(m.rootDir, func(path string, info os.FileInfo, err error) error {
@@ -231,6 +238,7 @@ func (m *Manager) isHidden(path string) (bool, error) {
 
 // reads the contents of a file
 func (m *Manager) readFile(path string) ([]byte, error) {
+	defer timetrack(time.Now(), "runtime.readFile")
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -245,6 +253,7 @@ func (m *Manager) readFile(path string) ([]byte, error) {
 
 // calculates the sha256 sum of contents of file in path
 func (m *Manager) calcChecksum(path string) (string, error) {
+	defer timetrack(time.Now(), "runtime.calcCheckSum")
 	contents, err := m.readFile(path)
 	if err != nil {
 		return "", err
@@ -255,6 +264,7 @@ func (m *Manager) calcChecksum(path string) (string, error) {
 
 // StoreState stores hashes of the current state of all files(not hidden) in the root program directory
 func (m *Manager) StoreState() error {
+	defer timetrack(time.Now(), "runtime.StoreState")
 	sm := make(stateMap)
 	err := filepath.Walk(m.rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -308,6 +318,7 @@ func (m *Manager) StoreState() error {
 
 // gets the current stored state
 func (m *Manager) getStoredState() (stateMap, error) {
+	defer timetrack(time.Now(), "runtime.getStoredState")
 	contents, err := m.readFile(m.statePath)
 	if err != nil {
 		return nil, err
@@ -321,6 +332,7 @@ func (m *Manager) getStoredState() (stateMap, error) {
 
 // readAll reads all the files and returns the contents as stateChanges
 func (m *Manager) readAll() (*StateChanges, error) {
+	defer timetrack(time.Now(), "runtime.readAll")
 	sc := &StateChanges{
 		Changes: make(map[string]string),
 	}
@@ -369,6 +381,7 @@ func (m *Manager) readAll() (*StateChanges, error) {
 
 // GetChanges checks if the state has changed in the root directory
 func (m *Manager) GetChanges() (*StateChanges, error) {
+	defer timetrack(time.Now(), "runtime.GetChanges")
 	sc := &StateChanges{
 		Changes: make(map[string]string),
 	}
@@ -649,4 +662,9 @@ func (m *Manager) WriteProgramFiles(progFiles map[string]string, targetDir *stri
 		}
 	}
 	return nil
+}
+
+func timetrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	fmt.Println(name, "took", elapsed)
 }

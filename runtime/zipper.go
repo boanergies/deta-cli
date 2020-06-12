@@ -26,9 +26,14 @@ func (z *zipper) zipp() ([]byte, error) {
 		if err != nil {
 			return err
 		}
+
+		if path == z.srcDir {
+			return nil
+		}
+
 		// skip directory
 		if info.IsDir() {
-			return nil
+			return filepath.SkipDir
 		}
 		f, e := os.Open(path)
 		if e != nil {
@@ -52,6 +57,16 @@ func (z *zipper) zipp() ([]byte, error) {
 	buf := new(bytes.Buffer)
 	w := zip.NewWriter(buf)
 
+	f, err := w.Create("_entry.py")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = f.Write(z.entryFileContent())
+	if err != nil {
+		return nil, err
+	}
+
 	for name, content := range files {
 		f, err := w.Create(name)
 		if err != nil {
@@ -68,4 +83,19 @@ func (z *zipper) zipp() ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func (z *zipper) entryFileContent() []byte {
+	return []byte(`from deta.lib.handler import handle
+from deta.lib.debug import debug
+
+try:
+	import main
+except:
+	pass
+	
+@debug
+def handler(event, context):
+	import main
+	return handle(event, main)`)
 }

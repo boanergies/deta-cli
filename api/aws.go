@@ -12,18 +12,27 @@ var (
 	secretKey string
 )
 
-// DeployLambda xx
-func (c *DetaClient) DeployLambda(programID string, zipFile []byte) error {
-	sess, err := session.NewSession(&aws.Config{
+// LambdaClient xx
+type LambdaClient struct {
+	fx *lambda.Lambda
+}
+
+// NewLambdaClient xx
+func NewLambdaClient() *LambdaClient {
+	sess, _ := session.NewSession(&aws.Config{
 		Region:      aws.String("eu-central-1"),
 		Credentials: credentials.NewStaticCredentials(accessKey, secretKey, ""),
 	})
-	if err != nil {
-		return err
-	}
 	fx := lambda.New(sess)
-	_, err = fx.UpdateFunctionCode(&lambda.UpdateFunctionCodeInput{
-		Publish:      aws.Bool(true),
+	return &LambdaClient{
+		fx: fx,
+	}
+}
+
+// DeployLambda xx
+func (c *LambdaClient) DeployLambda(programID string, zipFile []byte) error {
+	_, err := c.fx.UpdateFunctionCode(&lambda.UpdateFunctionCodeInput{
+		//Publish:      aws.Bool(true),
 		FunctionName: aws.String(programID),
 		ZipFile:      zipFile,
 	})

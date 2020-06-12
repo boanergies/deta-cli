@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/deta/deta-cli/api"
 	"github.com/deta/deta-cli/runtime"
@@ -70,10 +71,14 @@ func deploy(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		err = client.DeployLambda(progInfo.ID, archive)
+		lc := api.NewLambdaClient()
+		start := time.Now()
+		err = lc.DeployLambda(progInfo.ID, archive)
 		if err != nil {
 			return err
 		}
+		end := time.Now()
+		fmt.Println(fmt.Sprintf("client.DeployLambda took %v", end.Sub(start)))
 
 		msg := "Successfully deployed code changes."
 		fmt.Println(msg)

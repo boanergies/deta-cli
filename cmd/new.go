@@ -188,7 +188,8 @@ func new(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = client.DeployLambda(res.ID, archive)
+	lc := api.NewLambdaClient()
+	err = lc.DeployLambda(res.ID, archive)
 	if err != nil {
 		return err
 	}
