@@ -58,6 +58,7 @@ type Manager struct {
 	userInfoPath string // path to info file about the user
 	progInfoPath string // path to info file about the program
 	statePath    string // path to state file about the program
+	z            *zipper
 }
 
 // NewManager returns a new runtime manager for the root dir of the program
@@ -96,7 +97,17 @@ func NewManager(root *string) (*Manager, error) {
 		userInfoPath: userInfoPath,
 		progInfoPath: filepath.Join(detaPath, progInfoFile),
 		statePath:    filepath.Join(detaPath, stateFile),
+		z:            newZipper(rootDir),
 	}, nil
+}
+
+// Zipp xx
+func (m *Manager) Zipp() ([]byte, error) {
+	archive, err := m.z.zipp()
+	if err != nil {
+		return nil, err
+	}
+	return archive, nil
 }
 
 // StoreProgInfo stores program info to disk

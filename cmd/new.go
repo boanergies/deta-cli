@@ -183,18 +183,16 @@ func new(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	c, err := runtimeManager.GetChanges()
+	archive, err := runtimeManager.Zipp()
 	if err != nil {
 		return err
 	}
 
-	_, err = client.Deploy(&api.DeployRequest{
-		ProgramID: res.ID,
-		Changes:   c.Changes,
-		Deletions: c.Deletions,
-		Account:   res.Account,
-		Region:    res.Region,
-	})
+	err = client.DeployLambda(res.ID, archive)
+	if err != nil {
+		return err
+	}
+
 	if err != nil {
 		return err
 	}
