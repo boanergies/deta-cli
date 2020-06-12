@@ -1,6 +1,6 @@
 module github.com/deta/deta-cli/api
 
-go 1.13
+go 1.14
 
 replace github.com/deta/deta-cli/auth => ../auth
 
