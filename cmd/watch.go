@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/deta/deta-cli/api"
 	"github.com/deta/deta-cli/runtime"
@@ -60,16 +61,20 @@ func watch(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	fmt.Println("Watching changes")
 	for {
 		<-c
 		archive, err := runtimeManager.Zipp()
 		if err != nil {
 			return err
 		}
+		start := time.Now()
 		err = lc.DeployLambda(progInfo.ID, archive)
 		if err != nil {
 			return err
 		}
+		end := time.Now()
+		fmt.Println(end.Sub(start))
 		fmt.Println("Deployed changes")
 
 		dc, err := runtimeManager.GetDepChanges()
